@@ -41,14 +41,14 @@ and type system chosen for this subject specifically.
 
 ### Palette — named pigments, not marketing colors
 
-| Token | Light value | Role |
-|---|---|---|
-| `--pigment-linen` | `#F2EEE6` | Light theme surface (gallery wall) |
-| `--pigment-charcoal` | `#14131A` | Dark theme surface (gallery wall, lights down) |
-| `--pigment-ink` | `#1C1B22` | Primary text |
-| `--pigment-oxide` | `#C4462B` | Accent — a burnt Venetian-red pigment |
-| `--pigment-ochre` | `#C9A227` | Spotlight glow, focus rings, hover warmth |
-| `--pigment-stone` | `#8B8577` | Muted / secondary text |
+| Token                | Light value | Role                                           |
+| -------------------- | ----------- | ---------------------------------------------- |
+| `--pigment-linen`    | `#F2EEE6`   | Light theme surface (gallery wall)             |
+| `--pigment-charcoal` | `#14131A`   | Dark theme surface (gallery wall, lights down) |
+| `--pigment-ink`      | `#1C1B22`   | Primary text                                   |
+| `--pigment-oxide`    | `#C4462B`   | Accent — a burnt Venetian-red pigment          |
+| `--pigment-ochre`    | `#C9A227`   | Spotlight glow, focus rings, hover warmth      |
+| `--pigment-stone`    | `#8B8577`   | Muted / secondary text                         |
 
 All semantic tokens (`surface`, `ink`, `accent`, `hairline`, …) are raw
 CSS custom properties re-defined per `[data-theme]`, then bridged into
@@ -61,7 +61,7 @@ JS-driven re-renders.
 - **Fraunces** — display serif, used with restraint for headlines
 - **Inter** — body text
 - **IBM Plex Mono** — museum wall-label style captions (medium,
-  dimensions, year) — mono is reserved for *facts about the work*,
+  dimensions, year) — mono is reserved for _facts about the work_,
   never used decoratively
 
 ### Signature element
@@ -105,15 +105,20 @@ All defined in `src/index.css` under `@theme`:
 src/
   components/
     ui/        reusable primitives (Button, Container, Section, Badge, …)
-    effects/    signature motion/interaction pieces (Spotlight, …)
-    layout/     (Phase 2+) navbar, footer, page shells
-    gallery/    (Phase 3+) bento grid, cards, filters
-    viewer/     (Phase 4+) fullscreen artwork viewer
-  context/      ThemeContext (light/dark, persisted)
-  data/         (Phase 3+) artwork/collection data
-  lib/          small framework-agnostic helpers (cn.js)
-  App.jsx        Phase 1 review page — replaced by the real routed
-                 app shell in Phase 2
+    effects/    signature motion pieces (Spotlight, Parallax, GenerativeCanvas)
+    layout/     Navbar, MobileMenu (footer arrives Phase 7)
+    loader/     PremiumLoader (entrance unveiling animation)
+    hero/       Hero (cinematic homepage hero)
+    gallery/    bento grid, masonry grid, gallery card, filter bar,
+                grid switcher, artwork of the day
+    story/       StoryHero, Philosophy, StudioProcess, CareerTimeline
+    viewer/      ViewerStage, ViewerControls, ViewerDetails, ViewerNav
+  context/      ThemeContext (light/dark), CursorContext (gallery hover cursor)
+  data/         navigation.js, paintings.js (36-piece catalogue), artist.js (bio content)
+  hooks/        useLazyReveal, useInfiniteReveal, useFavorites, useKeyboardNav
+  lib/          small framework-agnostic helpers (cn.js, seededRandom.js)
+  pages/        Home, Gallery, ArtworkViewer, Story, ComingSoon, StyleGuide
+  App.jsx        root shell: loader → navbar → routed pages with transitions
   main.jsx       entry point (Router + ThemeProvider)
   index.css      the entire design system: tokens, base layer, utilities
 ```
@@ -124,15 +129,136 @@ are prefixed `use*`; everything else is camelCase.
 
 ## Adding your paintings
 
-Drop image files into `src/assets/paintings/` (create the folder) —
-the data layer and gallery grid for wiring these in arrive in **Phase
-3**. Any image works as a placeholder in the meantime.
+Edit `src/data/paintings.js`. Each entry can take an `image` field (a
+path into `src/assets/paintings/` or an imported URL) — as soon as one
+is present, `GalleryCard` and the hero automatically render that image
+instead of the generative placeholder. Until then every piece uses
+`components/effects/GenerativePainting.jsx`, a seeded abstract stand-in
+so the layout, filters, and grids are all reviewable now.
+
+## Phase 2 — Navigation & Cinematic Hero
+
+- **`PremiumLoader`** — plays once per browser session (`sessionStorage`
+  gated). A hand-drawn signature strokes itself in via SVG `pathLength`,
+  then two charcoal panels part like gallery curtains at an unveiling.
+  Resolves instantly under `prefers-reduced-motion`.
+- **`Navbar`** — transparent over the hero, gains a glass background and
+  hairline border after ~24px of scroll. Collapses to a hamburger below
+  `md`, opening `MobileMenu`, a full-screen glass overlay with staggered
+  link reveal, `Escape`-to-close, and scroll lock.
+- **`Hero`** — mesh gradient + two slow-drifting pigment blobs behind a
+  paper-grain overlay; headline reveals line-by-line via clipped
+  `translateY` stagger; the featured painting sits inside `Parallax`
+  (spring-smoothed pointer tracking, mouse-only) and the `Spotlight`
+  signature motif; `ScrollIndicator` fades once the visitor scrolls.
+- **Routing** — real `react-router` routes now exist for `/`, `/gallery`,
+  `/story`, `/contact`, and `/style-guide` (the Phase 1 reference page,
+  preserved and kept in sync going forward). `/gallery`, `/story`, and
+  `/contact` render `ComingSoon` stubs — styled, on-brand, and labeled
+  with the phase that will complete them — so the nav never points at a
+  dead end. Route changes animate with a shared `PageTransition` fade.
+
+## Phase 3 — Premium Bento Gallery
+
+- **Data** — `src/data/paintings.js` generates 36 placeholder works with
+  full metadata (title, category, medium, year, dimensions, tags,
+  featured flag, dateAdded). Nothing downstream depends on these being
+  generated — add an `image` field per piece and `GalleryCard` will use
+  a real `<img>` automatically instead of the generative placeholder.
+- **`GenerativePainting`** — seeded-per-id abstract composition standing
+  in for real artwork so every card looks distinct rather than repeating
+  one placeholder 36 times.
+- **`ArtworkOfTheDay`** — a deterministic daily pick (by day-of-year),
+  shown as a large banner above the grid.
+- **`FilterBar`** — category pills (the collections), a live search over
+  title/tags, and a Featured/Newest sort toggle.
+- **`GridSwitcher` + `BentoGrid` / `MasonryGrid`** — bento uses a dense
+  CSS grid where featured pieces claim a 2×2 cell; masonry uses CSS
+  columns so natural aspect ratios stagger the layout. Switching is
+  instant and preserves the current filter/search/sort state.
+- **`useInfiniteReveal`** — paginates the filtered set 12 at a time via
+  an `IntersectionObserver` sentinel; resets automatically whenever the
+  filtered set changes identity.
+- **`useLazyReveal`** — each card blurs up from a `Skeleton` once it
+  scrolls into view, standing in for real image decode time until real
+  `<img>` sources exist.
+- **Custom cursor** — `CursorContext` + `CustomCursor` render a small
+  "View" label that spring-follows the pointer while hovering any card
+  (desktop/mouse only; untouched on touch devices).
+- **Empty state** — filtering/searching down to zero results shows a
+  dedicated message rather than a blank grid.
+
+## Phase 4 — Artwork Viewer
+
+- **Overlay routing** — clicking a card navigates to `/gallery/:id` while
+  carrying `state.backgroundLocation`, so the viewer renders as a
+  fullscreen overlay on top of the still-mounted gallery grid rather than
+  a full page swap. The URL is real and shareable; direct visits to
+  `/gallery/:id` (no background state) still open the viewer correctly,
+  just without a grid visible behind it. Closing calls `navigate(-1)`,
+  returning to the exact scroll position in the grid.
+- **Shared transition** — `GalleryCard` and `ViewerStage` share a Framer
+  Motion `layoutId` per painting, so the clicked card visually grows into
+  the fullscreen image instead of a hard cut.
+- **`ViewerStage`** — double-click/tap to zoom (1.8×) with drag-to-pan
+  while zoomed; drag left/right when not zoomed to swipe between pieces.
+- **Keyboard** — `useViewerKeyboard` binds `←`/`→` to prev/next and `Esc`
+  to close.
+- **`ViewerDetails`** — story, inspiration, medium, dimensions, year,
+  collection, and tags, all pulled from `src/data/paintings.js`.
+- **`ViewerControls`** — share (native share sheet if available, else
+  copy-link with a confirmation toast), download (real image if
+  `painting.image` is set, otherwise the generative SVG is serialized
+  and downloaded directly), favorite (persisted via `useFavorites` /
+  `localStorage`), and a slideshow toggle that auto-advances every 4s.
+- Background scroll is locked while the viewer is open; it releases
+  automatically on close.
+
+## Phase 5 — Artist Story
+
+- **Content** — `src/data/artist.js` holds all of it: bio paragraphs,
+  philosophy quote, studio description, process steps, career timeline,
+  and awards. Edit that one file to replace the placeholder text; no
+  component changes needed.
+- **`StoryHero`** — portrait placeholder + name, tagline, and opening
+  bio, each line revealing on scroll via the shared `Reveal` wrapper.
+- **`Philosophy`** — a centered pull-quote followed by `SignatureDraw`,
+  the same hand-drawn-signature motif from the Phase 2 loader, reused
+  here and triggered on scroll into view instead of on page load.
+- **`StudioProcess`** — studio description + placeholder photo alongside
+  a numbered process list.
+- **`CareerTimeline`** — a vertical experience timeline plus a separate
+  awards list. (A more detailed, statistics-driven exhibition timeline
+  arrives in Phase 6 — this one stays intentionally simple.)
+- **`Reveal`** — the scroll-triggered fade/slide wrapper used across all
+  of the above; reusable for any future section that wants the same
+  on-scroll entrance.
+
+## Phase 6 — Timeline & Statistics
+
+Appended to the Story page, below the Phase 5 sections. Content lives in
+`src/data/recognition.js`.
+
+- **`AnimatedCounters`** — four stats that count up from zero once
+  scrolled into view (`useCountUp`, an eased `requestAnimationFrame`
+  loop gated by `IntersectionObserver` — no extra dependency needed).
+- **`ExhibitionTimeline`** — a more detailed, alternating left/right
+  timeline (venue, city, exhibition type) — deliberately richer than
+  Phase 5's simple career timeline, which stays as the at-a-glance
+  version.
+- **`CollectorTestimonials`** — one quote at a time, auto-rotating every
+  6s with manual dot navigation and a crossfade between quotes.
+- **`Publications`** — a simple press-mentions list (outlet, year, title).
 
 ## Phase status
 
 - [x] **Phase 1 — Foundation & Design System** ✅
-- [ ] Phase 2 — Navigation & Cinematic Hero
-- [ ] Phase 3 — Premium Bento Gallery
+- [x] **Phase 2 — Navigation & Cinematic Hero** ✅
+- [x] **Phase 3 — Premium Bento Gallery** ✅
+- [x] **Phase 4 — Artwork Viewer** ✅
+- [x] **Phase 5 — Artist Story** ✅
+- [x] **Phase 6 — Timeline & Statistics** ✅
+- [ ] Phase 7 — Contact
 - [ ] Phase 4 — Artwork Viewer
 - [ ] Phase 5 — Artist Story
 - [ ] Phase 6 — Timeline & Statistics

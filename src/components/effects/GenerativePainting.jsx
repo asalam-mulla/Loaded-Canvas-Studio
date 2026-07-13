@@ -7,7 +7,7 @@ import { mulberry32, seededRange } from "../../lib/seededRandom";
  * an <img src={painting.image}> as soon as real artwork exists —
  * GalleryCard.jsx already branches on that field.
  */
-export function GenerativePainting({ id, palette, className }) {
+export function GenerativePainting({ id, palette, className, domId }) {
     const random = mulberry32(id * 9973);
     const [base, mid, accent] = palette;
 
@@ -24,7 +24,7 @@ export function GenerativePainting({ id, palette, className }) {
     const bandY = seededRange(random, 55, 85);
 
     return (
-        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" className={className} role="presentation">
+        <svg id={domId} viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" className={className} role="presentation">
             <rect width="100" height="100" fill="var(--pigment-linen)" />
             <circle cx={blob1.cx} cy={blob1.cy} r={blob1.r} fill={base} opacity="0.85" />
             <circle cx={blob2.cx} cy={blob2.cy} r={blob2.r} fill={mid} opacity="0.6" />

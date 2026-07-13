@@ -27,6 +27,22 @@ const TITLE_WORDS = [
 
 const ASPECTS = ["portrait", "landscape", "square"];
 
+const STORIES = [
+    "Painted over three sittings in the north-light studio, returning each time the light matched.",
+    "Begun as a study and left unfinished for a year before the final passes came quickly.",
+    "The palette came first — the composition was built to hold it, not the other way around.",
+    "A response to a much smaller sketch made on site, scaled up and slowed down.",
+    "Reworked twice; the version underneath still shows faintly at the edges.",
+];
+
+const INSPIRATIONS = [
+    "The way afternoon light sits differently on plaster than on canvas.",
+    "A single line from a half-remembered poem about waiting rooms.",
+    "The gap between how a place looks and how it's remembered.",
+    "An old family photograph, cropped down to almost nothing.",
+    "The sound of a room after everyone has left it.",
+];
+
 function pick(arr, index) {
     return arr[index % arr.length];
 }
@@ -48,6 +64,8 @@ export const PAINTINGS = Array.from({ length: 36 }, (_, i) => {
         aspect: pick(ASPECTS, i),
         featured: id % 9 === 0,
         dateAdded: new Date(Date.now() - daysAgo * 86400000).toISOString(),
+        story: pick(STORIES, i),
+        inspiration: pick(INSPIRATIONS, i + 2),
     };
 });
 
