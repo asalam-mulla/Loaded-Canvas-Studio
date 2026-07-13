@@ -5,6 +5,8 @@ import { PremiumLoader } from "./components/loader/PremiumLoader";
 import { Navbar } from "./components/layout/Navbar";
 import Home from "./pages/Home";
 import Gallery from "./pages/Gallery";
+import ArtworkViewer from "./pages/ArtworkViewer";
+import Story from "./pages/Story";
 import ComingSoon from "./pages/ComingSoon";
 import StyleGuide from "./pages/StyleGuide";
 
@@ -31,6 +33,8 @@ function PageTransition({ children }) {
 export default function App() {
   const [ready, setReady] = useState(false);
   const location = useLocation();
+  const backgroundLocation = location.state?.backgroundLocation;
+  const mainLocation = backgroundLocation || location;
 
   return (
     <>
@@ -44,7 +48,7 @@ export default function App() {
 
       <main id="main" style={{ visibility: ready ? "visible" : "hidden" }}>
         <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
+          <Routes location={mainLocation} key={mainLocation.pathname}>
             <Route
               path="/"
               element={
@@ -57,7 +61,7 @@ export default function App() {
               path="/gallery"
               element={
                 <PageTransition>
-                  <ComingSoon title="The Gallery" phase="Phase 03 — Premium Bento Gallery" />
+                  <Gallery />
                 </PageTransition>
               }
             />
@@ -65,7 +69,7 @@ export default function App() {
               path="/story"
               element={
                 <PageTransition>
-                  <ComingSoon title="The Artist's Story" phase="Phase 05 — Artist Story" />
+                  <Story />
                 </PageTransition>
               }
             />
@@ -88,6 +92,12 @@ export default function App() {
           </Routes>
         </AnimatePresence>
       </main>
+
+      <AnimatePresence>
+        <Routes location={location} key={/^\/gallery\/\d+/.test(location.pathname) ? "viewer" : "closed"}>
+          <Route path="/gallery/:id" element={<ArtworkViewer />} />
+        </Routes>
+      </AnimatePresence>
     </>
   );
 }
