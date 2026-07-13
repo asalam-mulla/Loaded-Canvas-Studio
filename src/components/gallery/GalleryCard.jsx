@@ -1,3 +1,5 @@
+import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { cn } from "../../lib/cn";
 import { Badge } from "../ui/Badge";
 import { Skeleton } from "../ui/Skeleton";
@@ -14,21 +16,32 @@ const ASPECT_CLASS = {
 /**
  * `span` lets the bento grid give featured pieces more room; the masonry
  * grid ignores it since column-based masonry sizes purely off aspect
- * ratio. `image` is optional — pass a real URL once one exists and this
- * card will use it in place of the generative placeholder automatically.
+ * ratio. `image` comes from `painting.image` — leave it unset to use the
+ * generative placeholder; add it in src/data/paintings.js once a real
+ * file exists and this card switches over automatically.
+ *
+ * Links into the fullscreen viewer at /gallery/:id, carrying the current
+ * location as `state.backgroundLocation` so the viewer can render as an
+ * overlay on top of this grid instead of a full page navigation (see
+ * App.jsx). The media wrapper shares a layoutId with the viewer's image
+ * so Framer Motion animates one smoothly into the other.
  */
-export function GalleryCard({ painting, span, image, fill = false }) {
+export function GalleryCard({ painting, span, fill = false }) {
     const { ref, loaded } = useLazyReveal();
     const { setLabel } = useCursor();
+    const location = useLocation();
+    const image = painting.image;
 
     return (
-        <article
+        <Link
             ref={ref}
+            to={`/gallery/${painting.id}`}
+            state={{ backgroundLocation: location }}
             onMouseEnter={() => setLabel("View")}
             onMouseLeave={() => setLabel(null)}
-            className={cn("group relative overflow-hidden rounded-lg border border-hairline", span)}
+            className={cn("group relative block overflow-hidden rounded-lg border border-hairline", span)}
         >
-            <div className={cn("relative w-full", fill ? "h-full" : ASPECT_CLASS[painting.aspect])}>
+            <motion.div layoutId={`painting-${painting.id}`} className={cn("relative w-full", fill ? "h-full" : ASPECT_CLASS[painting.aspect])}>
                 {!loaded && <Skeleton className="absolute inset-0" />}
 
                 {image ? (
@@ -67,7 +80,7 @@ export function GalleryCard({ painting, span, image, fill = false }) {
                 {painting.featured && (
                     <Badge className="absolute left-3 top-3 border-none bg-surface-raised/90">Featured</Badge>
                 )}
-            </div>
-        </article>
+            </motion.div>
+        </Link>
     );
 }
